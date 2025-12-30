@@ -7,7 +7,12 @@ const createPost = async (req: Request, res: Response) => {
     // console.log(req, res)
 
     try{
-        const result = await postService.createPost(req.body);
+
+        if(!req.user){
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const result = await postService.createPost(req.body, req.user?.id as string);
         res.status(201).json(result);
     }catch(err){
         res.status(500).json({ error: "Failed to create post" });
