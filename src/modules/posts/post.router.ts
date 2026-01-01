@@ -60,6 +60,8 @@ const auth = (...roles: UserRole[]) => {
 
 export default auth
 
+router.get("/", postController.getPosts);
+
 router.post("/",auth(UserRole.USER), postController.createPost);
 
 
