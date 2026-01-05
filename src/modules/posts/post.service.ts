@@ -1,3 +1,4 @@
+
 import { auth } from './../../lib/auth';
 // import { Post, Prisma } from "@prisma/client";
 import { Post, PostStatus, Prisma } from "../../../generated/prisma/client";
@@ -9,13 +10,23 @@ const getAllPosts = async ({
   featured,
   status,
   authorId,
+  page,
+  limit,
+  skip,
+  sortBy,
+  sortOrder
 }: {
   search?: string | undefined;
   tags?: string[] | undefined;
   featured: boolean | undefined;
   status?: PostStatus | undefined;
   authorId?: string | undefined;
-}): Promise<Post[]> => {
+  page?: number | undefined;
+  limit?: number;
+  skip?: number;
+  sortBy: string | undefined;
+  sortOrder: string | undefined;
+}): Promise<{ data: Post[]; count: number; page?: number | undefined; limit?: number | undefined; totalPages: number | undefined }> => {
   const andConditions: Prisma.PostWhereInput[] = [];
 
   if (search) {
@@ -72,9 +83,25 @@ const getAllPosts = async ({
 
   const posts = await prisma.post.findMany({
     where: andConditions.length > 0 ? { AND: andConditions } : {},
+    ...(skip !== undefined && { skip }),
+    ...(limit !== undefined && { take: limit }),
+    orderBy:
+      sortBy && sortOrder
+        ? (({ [sortBy]: sortOrder as Prisma.SortOrder } as Prisma.PostOrderByWithRelationInput))
+        : ({ createdAt: "desc" } as Prisma.PostOrderByWithRelationInput),
   });
 
-  return posts;
+  const count = await prisma.post.count({
+    where: andConditions.length > 0 ? { AND: andConditions } : {},
+  });
+
+  return {
+    data: posts,
+    count: count,
+    page: page,
+    limit: limit,
+    totalPages: limit ? Math.ceil(count / limit) : undefined,
+  };
 };
 
 const createPost = async (
