@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import { postService } from "./post.service";
 import { PostStatus } from "../../../generated/prisma/enums";
 import paginationSortingHelper from "../../helpers/paginationSortingHelpers";
+import { string } from "better-auth/*";
 
 
 
@@ -43,6 +44,22 @@ const getPosts = async (req: Request, res: Response) => {
     }
 }
 
+const getPostById = async (req: Request, res: Response) => {
+    try{
+
+        const {post_id} = req.params ;
+        // console.log(post_id) 
+        if(!post_id){
+            return  res.status(400).json({ error: "Post ID is required" });
+        }
+        const result = await postService.getPostById(post_id);
+        res.status(200).json(result);
+
+    }catch(error){
+        console.log(error)
+    }
+}
+
 
 const createPost = async (req: Request, res: Response) => {
     // Implementation for creating a post will go here
@@ -64,5 +81,6 @@ const createPost = async (req: Request, res: Response) => {
 
 export const postController = { 
     createPost,
-    getPosts
+    getPosts,
+    getPostById
 };
