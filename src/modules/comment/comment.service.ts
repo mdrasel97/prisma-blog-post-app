@@ -1,25 +1,72 @@
-const createComment = async ()=>{
-    console.log("create comment")
+
+
+import { prisma } from "../../lib/prisma";
+
+
+const createComment = async (payload:{
+    content: string;
+    authorId: string;
+    post_id: string;
+    parentId?: string;
+} )=>{
+    const postData = await prisma.post.findUnique({
+        where: { post_id: payload.post_id }
+    });
+    if (!postData) {
+        throw new Error("Post not found");
+    }
+        if (payload.parentId) {
+        await prisma.comment.findUnique({
+            where: { comment_id: payload.parentId }
+        });
+    return await prisma.comment.create({
+        data: payload
+    });
+};
+}
+
+const getCommentById = async (comment_id: string) => {
+return await prisma.comment.findUnique({
+    where: { comment_id },
+    include: {
+        post: {
+            select:{
+                post_id: true,
+                title: true,
+                content: true,
+                views: true,
+            }
+        }
+    }
+})
+}
+
+const getCommentByAuthor = async (authorId: string) => {
+    return await prisma.comment.findMany({
+        where: { authorId },
+        orderBy:{
+            created_at: "asc"
+        },
+        include:{
+            post:{
+                select:{
+                    post_id: true,
+                    title: true
+                }
+            }
+        }
+    })
+}
+
+
+const deleteComment = async (comment_id: string, authorId: string) => {
+    // console.log({comment_id, authorId});
+    const 
 }
 
 export const commentService = {
     createComment,
-};
-
-
-//   authorId String
-//   post_id  String
-//   post     Post   @relation(fields: [post_id], references: [post_id]) 
-//   parentId String?
-//   parent   Comment?  @relation("CommentsReplies", fields: [parentId], references: [comment_id])
-//   replies  Comment[] @relation("CommentsReplies")
-
-//   status CommentStatus @default(APPROVED)
-
-//   created_at DateTime @default(now())
-//   updated_at DateTime @updatedAt
-
-//   @@index([post_id])
-//   @@index([authorId])
-//   @@map("comments")
-// }
+    getCommentById,
+    getCommentByAuthor,
+    deleteComment
+}

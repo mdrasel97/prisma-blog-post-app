@@ -120,7 +120,22 @@ const getPostById = async (post_id: string) => {
   const postData = await tx.post.findUnique({
     where: {
        post_id,  
+    },
+  include: {
+    comments: {
+      where: { parentId: null },
+      include: {
+        replies: {
+          include: {
+            replies: true
+          }
+        }
+      }
+    },
+    _count: {
+      select: { comments: true }
     }
+  }
   });
   return postData;
   })
