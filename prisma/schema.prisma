@@ -37,11 +37,11 @@ model Comment {
 
   authorId String
   post_id  String
-  post     Post   @relation(fields: [post_id], references: [post_id])
+  post     Post   @relation(fields: [post_id], references: [post_id], onDelete: Cascade)
 
   // Self relation (comment reply system)
   parentId String?
-  parent   Comment?  @relation("CommentsReplies", fields: [parentId], references: [comment_id])
+  parent   Comment?  @relation("CommentsReplies", fields: [parentId], references: [comment_id], onDelete: Cascade)
   replies  Comment[] @relation("CommentsReplies")
 
   status CommentStatus @default(APPROVED)

@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { commentService } from "./comment.service";
-import { get } from "node:http";
 
 const createComment = async (req: Request, res: Response) => {
    try {
@@ -47,9 +46,22 @@ const deleteComment = async (req: Request, res: Response) => {
     }
 }
 
+const updateComment = async (req: Request, res: Response) => {
+    try{
+        const user = req.user;
+        const {commentId} = req.params;
+        const {content} = req.body;
+        await commentService.updateComment(commentId as string, user?.id as string, content);
+        res.status(200).json({ message: "Comment updated successfully" });
+    } catch(err){
+        res.status(500).json({ error: "Failed to update comment" });
+    }
+}
+
 export const commentController = {
     createComment,
     getCommentById,
     getCommentByAuthor,
-    deleteComment
+    deleteComment,
+    updateComment
 };
