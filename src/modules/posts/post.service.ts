@@ -104,44 +104,89 @@ const getAllPosts = async ({
   };
 };
 
+
 const getPostById = async (post_id: string) => {
-  // console.log("Id by post get");
-  const result = await prisma.$transaction(async (tx)=>{
+  return await prisma.$transaction(async (tx) => {
+
+    // check post exists
+    const post = await tx.post.findUnique({
+      where: { post_id },
+    });
+
+    if (!post) {
+      throw new Error("Post not found");
+    }
+
+    // views increment
     await tx.post.update({
-    where:{
-      post_id,
-    },
-    data:{
-      views:{
-        increment: 1
-      }
-    }
-  })
-  const postData = await tx.post.findUnique({
-    where: {
-       post_id,  
-    },
-  include: {
-    comments: {
-      where: { parentId: null },
+      where: { post_id },
+      data: {
+        views: { increment: 1 },
+      },
+    });
+
+    // Full post data return
+    const postData = await tx.post.findUnique({
+      where: { post_id },
       include: {
-        replies: {
+        comments: {
+          where: { parentId: null },
           include: {
-            replies: true
-          }
-        }
-      }
-    },
-    _count: {
-      select: { comments: true }
-    }
-  }
+            replies: {
+              include: {
+                replies: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: { comments: true },
+        },
+      },
+    });
+
+    return postData;
   });
-  return postData;
+};
+
+
+const getMyPost = async (authorId: string) => {
+
+
+  await prisma.user.findUniqueOrThrow({
+    where: {
+      id: authorId,
+      status: "active"
+    }
   })
 
-  return result;
-};
+    const result = await prisma.post.findMany({
+        where: {authorId},
+        orderBy:{
+            created_at: "desc"
+        },
+        include:{
+          _count:{
+            select:{
+              comments:true
+            }
+          }
+        }
+    })
+
+    const total = await prisma.post.aggregate({
+      _count:{
+        post_id: true
+      },
+      where: {authorId}
+    })
+
+    return {
+        data: result,
+        total
+    };
+
+}
 
 const createPost = async (
   data: Omit<Post, "id" | "createdAt" | "updatedAt" | "authorId">,
@@ -155,8 +200,36 @@ const createPost = async (
   });
 };
 
+const updatePost = async (post_id: string, data: Partial<Post>, authorId: string, isAdmin: boolean) => {
+  const postData = await prisma.post.findFirstOrThrow({
+    where: { post_id },
+    select:{
+      authorId: true,
+      post_id: true
+    }
+  });
+  if (  !isAdmin && (postData.authorId !== authorId)) {
+    throw new Error("Unauthorized to update this post");
+  }
+
+  if(!isAdmin){
+    delete data.isFeatured
+  }
+
+  const result = await prisma.post.update({
+    where: { post_id },
+    data,
+  });
+  return result;
+}
+  
+
+
+
 export const postService = {
   createPost,
   getAllPosts,
-  getPostById
-};
+  getPostById,
+  getMyPost,
+  updatePost
+};  

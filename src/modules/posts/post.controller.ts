@@ -1,8 +1,11 @@
+
 import express, { Request, Response } from "express";
 import { postService } from "./post.service";
 import { PostStatus } from "../../../generated/prisma/enums";
 import paginationSortingHelper from "../../helpers/paginationSortingHelpers";
 import { string } from "better-auth/*";
+import { commentService } from "../comment/comment.service";
+import { UserRole } from '../../middlewares/auth';
 
 
 
@@ -60,6 +63,17 @@ const getPostById = async (req: Request, res: Response) => {
     }
 }
 
+const getMyPost = async (req: Request, res: Response) => {
+    try{
+        const user = req.user; 
+        console.log("user data", user)
+        const result = await postService.getMyPost(user?.id as string);
+        res.status(200).json(result);
+    } catch(err){
+        res.status(500).json({ error: "Failed to fetch posts" });
+    }
+}
+
 
 const createPost = async (req: Request, res: Response) => {
     // Implementation for creating a post will go here
@@ -79,8 +93,31 @@ const createPost = async (req: Request, res: Response) => {
     }
 }
 
+const updatePost = async (req: Request, res: Response) => {
+    try{
+        const user = req.user
+        if(!user){
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const {post_id} = req.params ;
+        const isAdmin = user?.role === UserRole.ADMIN;
+        console.log(user)
+        if(!post_id){
+            return res.status(400).json({ error: "Post ID is required" });
+        }
+
+        const result = await postService.updatePost(post_id as string, req.body, user.id, isAdmin);
+        res.status(200).json(result);
+    }catch(err){
+        res.status(500).json({ error: "Failed to update post" });
+    }
+}
+
 export const postController = { 
     createPost,
     getPosts,
-    getPostById
-};
+    getPostById,
+    getMyPost,
+    updatePost
+};  

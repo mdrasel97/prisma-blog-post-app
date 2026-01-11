@@ -97,10 +97,20 @@ const updateComment = async (comment_id: string, authorId: string, content: stri
     });
 }
 
+
+
+const moderateComment = async () => {
+    // To be implemented
+    console.log("moderator comment")
+}
+
+
+
 export const commentService = {
     createComment,
     getCommentById,
     getCommentByAuthor,
     deleteComment,
-    updateComment
+    updateComment,
+    moderateComment
 }
