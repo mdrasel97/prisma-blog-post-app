@@ -1,10 +1,8 @@
 
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import { postService } from "./post.service";
 import { PostStatus } from "../../../generated/prisma/enums";
 import paginationSortingHelper from "../../helpers/paginationSortingHelpers";
-import { string } from "better-auth/*";
-import { commentService } from "../comment/comment.service";
 import { UserRole } from '../../middlewares/auth';
 
 
@@ -75,7 +73,7 @@ const getMyPost = async (req: Request, res: Response) => {
 }
 
 
-const createPost = async (req: Request, res: Response) => {
+const createPost = async (req: Request, res: Response, next:NextFunction) => {
     // Implementation for creating a post will go here
     // res.send("Create a new post");
     // console.log(req, res)
@@ -89,7 +87,7 @@ const createPost = async (req: Request, res: Response) => {
         const result = await postService.createPost(req.body, req.user?.id as string);
         res.status(201).json(result);
     }catch(err){
-        res.status(500).json({ error: "Failed to create post" });
+        next(err)
     }
 }
 
