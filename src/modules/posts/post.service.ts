@@ -1,8 +1,12 @@
+import { Boolean } from './../../../generated/prisma/internal/prismaNamespace';
 
 import { auth } from './../../lib/auth';
 // import { Post, Prisma } from "@prisma/client";
-import { Post, PostStatus, Prisma } from "../../../generated/prisma/client";
+import { CommentStatus, Post, PostStatus, Prisma } from "../../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
+import { count } from 'node:console';
+import { publicDecrypt } from 'node:crypto';
+import { promise } from 'better-auth/*';
 
 const getAllPosts = async ({
   search,
@@ -222,8 +226,55 @@ const updatePost = async (post_id: string, data: Partial<Post>, authorId: string
   });
   return result;
 }
+
+
+const deletePost = async(post_id: string, authorId: string, isAdmin: boolean)=>{
+const postData = await prisma.post.findFirstOrThrow({
+  where:{
+    post_id
+  },
+  select:{
+    post_id:true,
+    authorId: true
+  }
+})
+
+if (  !isAdmin && (postData.authorId !== authorId)) {
+    throw new Error("Unauthorized to update this post");
+  }
+
+  return await prisma.post.delete({
+    where:{
+      post_id
+    }
+  })
+}
   
 
+
+const getStats = async()=>{
+
+  // post count, published post, draft post, total count, total views
+  return await prisma.$transaction(async(tx)=>{
+    const [totalPosts,publishedPosts, draftPosts, archivedPosts, totalComments, approvedComment] = await Promise.all([
+    await tx.post.count() ,
+    await tx.post.count({where:{status : PostStatus.PUBLISHED}}),
+    await tx.post.count({where:{status : PostStatus.DRAFT}}),
+    await tx.post.count({where:{status : PostStatus.ARCHIVED}}),
+    await tx.comment.count(),
+    await tx.comment.count({where: {status: CommentStatus.APPROVED}})
+    ])
+    
+    return {
+      totalPosts,
+      publishedPosts,
+      draftPosts,
+      archivedPosts,
+      totalComments,
+      approvedComment
+    }
+  })
+}
 
 
 export const postService = {
@@ -231,5 +282,7 @@ export const postService = {
   getAllPosts,
   getPostById,
   getMyPost,
-  updatePost
+  updatePost,
+  deletePost,
+  getStats
 };  
