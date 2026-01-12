@@ -17,6 +17,23 @@ function errorHandler (err:any, req:Request, res:Response, next: NextFunction) {
     if(err.code === "P2025"){
       statusCode = 400
       errorMessage= "An operation failed because it depends on one more records"
+    }else if (err.code === "P2002"){
+      statusCode = 400
+      errorMessage= "Duplicate key error"
+    }else if(err.code === "P2003"){
+      statusCode = 400
+      errorMessage= "Foreign key const failed"
+    }
+  }else if(err instanceof Prisma.PrismaClientUnknownRequestError){
+    statusCode = 500
+    errorMessage = "Error occurred during query execution"
+  }else if (err instanceof Prisma.PrismaClientInitializationError){
+    if(err.errorCode === "P1000"){
+      statusCode= 401
+      errorMessage = "Authentication field Please Check your creditials!"
+    }else if(err.errorCode === "P1001"){
+      statusCode = 400,
+      errorMessage = "can not reach database server"
     }
   }
 

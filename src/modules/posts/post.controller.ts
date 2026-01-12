@@ -91,7 +91,7 @@ const createPost = async (req: Request, res: Response, next:NextFunction) => {
     }
 }
 
-const updatePost = async (req: Request, res: Response) => {
+const updatePost = async (req: Request, res: Response, next: NextFunction) => {
     try{
         const user = req.user
         if(!user){
@@ -108,7 +108,7 @@ const updatePost = async (req: Request, res: Response) => {
         const result = await postService.updatePost(post_id as string, req.body, user.id, isAdmin);
         res.status(200).json(result);
     }catch(err){
-        res.status(500).json({ error: "Failed to update post" });
+        next(err)
     }
 }
 
